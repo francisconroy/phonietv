@@ -3,8 +3,18 @@ name = "phonietv"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+authors = [
+    { name = "Francis Conroy", email = "francisc@posteo.net" }
+]
 requires-python = ">=3.13"
 dependencies = [
     "adafruit-circuitpython-pn532>=2.4.9",
     "python-vlc>=3.0.21203",
 ]
+
+[project.scripts]
+phonietv = "phonietv:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"

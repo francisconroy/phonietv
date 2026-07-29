@@ -121,7 +121,7 @@ wheels = [
 [[package]]
 name = "phonietv"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "adafruit-circuitpython-pn532" },
     { name = "python-vlc" },
