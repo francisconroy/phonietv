@@ -1,3 +1,4 @@
+import logging
 import threading
 from abc import ABC, abstractmethod
 from queue import Queue
@@ -5,6 +6,7 @@ from typing import Set
 
 from .event import PhonieTVEvent
 
+LOGGER = logging.getLogger(__name__)
 
 class PhonieTVTask(ABC):
     def __init__(self, task_name: str, stop_event):
@@ -38,6 +40,7 @@ class PhonieTVTask(ABC):
         :param event:
         :return:
         """
+        LOGGER.warning(f"{self.task_name}: publishing event {event.eventType}")
         with self.event_queue_lock:
             for queue in self.event_queues:
                 queue.put(event)
