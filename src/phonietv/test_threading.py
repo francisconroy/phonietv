@@ -16,8 +16,8 @@ class PhoneTVTaskTesterA(PhonieTVTask):
         while not stop_event.is_set():
             try:
                 event_to_process = self.inbound_queue.get_nowait()
-                LOGGER.info(f"got event {event_to_process.eventType}")
-                if event_to_process.eventType == "final_event":
+                LOGGER.info(f"got event {event_to_process.event_type}")
+                if event_to_process.event_type == "final_event":
                     LOGGER.info(f"Stopping thread {self.task_name}")
                     break
                 else:
@@ -34,8 +34,8 @@ class PhonieTVTaskTesterB(PhonieTVTask):
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
             event_to_process = self.inbound_queue.get(block=True)
-            LOGGER.info(f"got event {event_to_process.eventType}")
-            if event_to_process.eventType == "response_event":
+            LOGGER.info(f"got event {event_to_process.event_type}")
+            if event_to_process.event_type == "response_event":
                 self.publish_event(PhonieTVEvent("final_event", {"response": "ok"}))
                 LOGGER.info(f"Stopping thread {self.task_name}")
                 break
