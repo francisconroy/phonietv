@@ -25,6 +25,9 @@ class TimerExpiredEvent(PhonieTVEvent):
     def __init__(self):
         super().__init__("timer_expired_event", None)
 
+class TimerSetStateEvent(PhonieTVEvent):
+    def __init__(self, state: bool):
+        super().__init__("timer_set_state_event", state)
 
 class Timer(PhonieTVTask):
     def __init__(self, task_name: str, stop_event, num_indicators: int, timer_duration_s: float):
