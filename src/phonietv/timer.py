@@ -2,6 +2,7 @@ import logging
 import math
 import threading
 import time
+import queue
 from dataclasses import dataclass
 
 from .event import PhonieTVEvent
