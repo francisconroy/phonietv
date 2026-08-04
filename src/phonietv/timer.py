@@ -29,7 +29,8 @@ class TimerSetStateEvent(PhonieTVEvent):
     def __init__(self, state: bool):
         super().__init__("timer_set_state_event", state)
 
-class Timer(PhonieTVTask):
+
+class TimerTask(PhonieTVTask):
     def __init__(self, task_name: str, stop_event, num_indicators: int, timer_duration_s: float):
         super().__init__(task_name, stop_event)
         self.start_time = None
