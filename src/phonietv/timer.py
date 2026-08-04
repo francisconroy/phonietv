@@ -44,9 +44,12 @@ class TimerTask(PhonieTVTask):
             try:
                 event_to_process = self.inbound_queue.get_nowait()
                 LOGGER.info(f"got event {event_to_process.event_type}")
-                if event_to_process.event_type == "final_event":
-                    LOGGER.info(f"Stopping thread {self.task_name}")
-                    break
+                if event_to_process.event_type == "timer_set_state_event":
+                    if event_to_process.event_payload:
+                        self.start_timer()
+                    else:
+                        self.stop_timer()
+                    continue
                 else:
                     self.publish_event(PhonieTVEvent("response_event", {"response": "ok"}))
             except queue.Empty:
