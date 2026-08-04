@@ -3,5 +3,5 @@ from dataclasses import dataclass
 
 @dataclass
 class PhonieTVEvent:
-    eventType: str
-    eventPayload: object
+    event_type: str
+    event_payload: object
