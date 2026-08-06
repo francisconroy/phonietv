@@ -4,8 +4,8 @@ import threading
 import time
 from unittest import TestCase
 
-from .event import PhonieTVEvent
-from .threading import PhonieTVTask
+from phonietv.event import PhonieTVEvent
+from phonietv.threading import PhonieTVTask
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
 LOGGER = logging.getLogger(__name__)
