@@ -1,0 +1,74 @@
+import threading
+from datetime import timedelta
+from queue import Queue
+from unittest import TestCase, mock
+from unittest.mock import patch
+
+import time
+
+import time_machine
+
+from phonietv import timer
+from phonietv.timer import TimerExpiredEvent, TimerIndicatorEvent, TimerSetEnabledStateEvent, TimerTask
+
+
+class TestTimer(TestCase):
+    def test_get_indicator_count(self):
+        self.assertEqual(0, TimerTask.get_indicator_count(num_indicators=5, timer_duration=12, elapsed_time=0.0))
+        self.assertEqual(5, TimerTask.get_indicator_count(num_indicators=5, timer_duration=12, elapsed_time=11.99))
+        self.assertEqual(2, TimerTask.get_indicator_count(num_indicators=5, timer_duration=12, elapsed_time=5))
+
+    def test_timer_task(self):
+        stop_event = threading.Event()
+        timer_task = TimerTask("test_timer", stop_event=stop_event, num_indicators=5, timer_duration_s=12)
+        self.assertEqual("test_timer", timer_task.task_name)
+
+    def test_start_and_stop_timer_publish_indicator_events(self):
+        stop_indicator_event = threading.Event()
+        timer_task = TimerTask("test_timer", stop_event=stop_indicator_event, num_indicators=5, timer_duration_s=10)
+        outbound_queue = Queue()
+        timer_task.attach_event_queues({outbound_queue})
+        timer_task.start_timer()
+        timer_task.stop_timer()
+
+        start_indicator_event = outbound_queue.get_nowait()
+        stop_indicator_event = outbound_queue.get_nowait()
+
+        self.assertIsInstance(start_indicator_event, TimerIndicatorEvent)
+        self.assertEqual(0, start_indicator_event.event_payload.indicator_count)
+        self.assertIsInstance(stop_indicator_event, TimerIndicatorEvent)
+        self.assertEqual(0, stop_indicator_event.event_payload.indicator_count)
+
+    @mock.patch("phonietv.timer.TIMER_TASK_SLEEP_TIME_S", 0)  # Make thread agressive
+    def test_task_function_timer_signal_emits_indicator_and_expired_events(self):
+            stop_event = threading.Event()
+
+            timer_task = TimerTask("test_timer", stop_event=stop_event, num_indicators=5, timer_duration_s=120)
+            outbound_queue = Queue()
+            timer_task.attach_event_queues({outbound_queue})
+            timer_task.start()
+            timer_task.inbound_queue.put(TimerSetEnabledStateEvent(True))
+            start = time.monotonic()
+            time.sleep(0)
+            start_indicator_event = outbound_queue.get(timeout=1)
+            with mock.patch.object(timer.time, "monotonic", side_effect=[start+115, start+120, start+125]):
+                time.sleep(0)
+                second_indicator_event = outbound_queue.get(timeout=1)
+                time.sleep(0)
+
+            expiry_event = outbound_queue.get(timeout=1)
+            indicator_reset_event = outbound_queue.get(timeout=1)
+
+            breakpoint()
+            events = []
+            events.append(outbound_queue.get(timeout=1))
+            while not outbound_queue.empty():
+                events.append(outbound_queue.get_nowait())
+
+            self.assertEqual(3, len(events))
+
+            indicator_counts = [
+                event.event_payload.indicator_count
+                for event in events
+                if isinstance(event, TimerIndicatorEvent)
+            ]

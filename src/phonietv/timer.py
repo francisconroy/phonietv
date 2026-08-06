@@ -25,7 +25,7 @@ class TimerExpiredEvent(PhonieTVEvent):
     def __init__(self):
         super().__init__("timer_expired_event", None)
 
-class TimerSetStateEvent(PhonieTVEvent):
+class TimerSetEnabledStateEvent(PhonieTVEvent):
     def __init__(self, state: bool):
         super().__init__("timer_set_state_event", state)
 
@@ -57,14 +57,24 @@ class TimerTask(PhonieTVTask):
             # Handle indicator update
             if self.start_time is not None:
                 elapsed_time = time.monotonic() - self.start_time
-                indicator_count = self.get_indicator_count(self.num_indicators, self.timer_duration_s, elapsed_time)
-                if indicator_count != self.prev_indicator_count:
-                    self.prev_indicator_count = indicator_count
-                    self.publish_event(TimerIndicatorEvent(indicator_count))
-                if elapsed_time >= self.timer_duration_s:
+                if self.is_expired(elapsed_time):
                     self.publish_event(TimerExpiredEvent())
-                    self.start_time = None
+                    self.stop_timer()
+                else:
+                    self.handle_indicator_count(elapsed_time)
+
             time.sleep(TIMER_TASK_SLEEP_TIME_S)
+
+    def handle_indicator_count(self, elapsed_time: float):
+        indicator_count = self.get_indicator_count(self.num_indicators, self.timer_duration_s, elapsed_time)
+        assert indicator_count <= self.num_indicators, "Indicator count greater than registered number of indicators!"
+        if indicator_count != self.prev_indicator_count:
+            self.prev_indicator_count = indicator_count
+            self.publish_event(TimerIndicatorEvent(indicator_count))
+
+    def is_expired(self, elapsed_time: float) -> bool:
+        return elapsed_time >= self.timer_duration_s
+
 
     def start_timer(self):
         if self.start_time is None:
