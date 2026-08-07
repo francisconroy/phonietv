@@ -66,4 +66,7 @@ class TestTimer(TestCase):
             self.assertIsInstance(indicator_reset_event, TimerIndicatorEvent)
             self.assertEqual(0, indicator_reset_event.event_payload.indicator_count)
 
+            stop_event.set()
+            timer_task.join()
+
 
