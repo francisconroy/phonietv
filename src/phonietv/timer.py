@@ -50,8 +50,6 @@ class TimerTask(PhonieTVTask):
                     else:
                         self.stop_timer()
                     continue
-                else:
-                    self.publish_event(PhonieTVEvent("response_event", {"response": "ok"}))
             except queue.Empty:
                 pass
             # Handle indicator update
