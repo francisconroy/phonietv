@@ -51,24 +51,19 @@ class TestTimer(TestCase):
             start = time.monotonic()
             time.sleep(0)
             start_indicator_event = outbound_queue.get(timeout=1)
+            self.assertIsInstance(start_indicator_event, TimerIndicatorEvent)
+            self.assertEqual(0, start_indicator_event.event_payload.indicator_count)
             with mock.patch.object(timer.time, "monotonic", side_effect=[start+115, start+120, start+125]):
                 time.sleep(0)
                 second_indicator_event = outbound_queue.get(timeout=1)
+                self.assertIsInstance(second_indicator_event, TimerIndicatorEvent)
+                self.assertEqual(5, second_indicator_event.event_payload.indicator_count)
                 time.sleep(0)
 
             expiry_event = outbound_queue.get(timeout=1)
+            self.assertIsInstance(expiry_event, TimerExpiredEvent)
             indicator_reset_event = outbound_queue.get(timeout=1)
+            self.assertIsInstance(indicator_reset_event, TimerIndicatorEvent)
+            self.assertEqual(0, indicator_reset_event.event_payload.indicator_count)
 
-            breakpoint()
-            events = []
-            events.append(outbound_queue.get(timeout=1))
-            while not outbound_queue.empty():
-                events.append(outbound_queue.get_nowait())
 
-            self.assertEqual(3, len(events))
-
-            indicator_counts = [
-                event.event_payload.indicator_count
-                for event in events
-                if isinstance(event, TimerIndicatorEvent)
-            ]
