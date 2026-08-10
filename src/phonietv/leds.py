@@ -59,12 +59,14 @@ class LedsTask(PhonieTVTask):
                 event_to_process = self.inbound_queue.get_nowait()
                 LOGGER.info(f"got event {event_to_process.event_type}")
                 if event_to_process.event_type == "set_led_indicator_count":
+                    LOGGER.info(f"Setting LEDs to indicator pattern")
                     indicator_count = event_to_process.event_payload.indicator_count
                     colour = event_to_process.event_payload.colour.value
                     colours = [colour] * indicator_count # + [StatusColours.COLOUR_OFF.value] * (NUM_PIXELS - indicator_count)
                     update_blinkt(colours)
-                if event_to_process.event_type == "set_all_leds":
-                    colour = event_to_process.event_payload
+                if event_to_process.event_type == "set_leds_same_colour":
+                    LOGGER.info(f"Setting all LEDs to colour {event_to_process.event_payload.colour}")
+                    colour = event_to_process.event_payload.colour.value
                     colours = [colour] * NUM_PIXELS
                     update_blinkt(colours)
 
@@ -75,6 +77,8 @@ class LedsTask(PhonieTVTask):
             time.sleep(LEDS_TASK_SLEEP_TIME_S)
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
     stop_event = threading.Event()
     leds_task = LedsTask("test_leds", stop_event)
     leds_task.start()
