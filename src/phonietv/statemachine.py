@@ -52,7 +52,7 @@ class StateMachine:
                     self.current_state.parent_state.exit_function()
                 next_state.parent_state.entry_function(event)
         elif current_has_parent:
-            if next_state.parent_state.exit_function is not None:
+            if self.current_state.parent_state.exit_function is not None:
                 self.current_state.parent_state.exit_function()
         elif next_has_parent:
             LOGGER.info("Entering state: %s", next_state.parent_state.name)
