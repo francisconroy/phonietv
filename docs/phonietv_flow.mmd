@@ -9,6 +9,7 @@ stateDiagram
     Playing --> Playlist:Token detected
     Playlist --> Playlist:Token detected
     Playlist --> Playing:Play media (MRI, offset)
+    Playing --> Playlist:Media finished
     [*] --> Playlist
     Playing
     Playlist
