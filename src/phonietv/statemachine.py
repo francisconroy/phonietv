@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 class PhonieTVState:
     name: str
     entry_function: Callable[[PhonieTVEvent | None], None] | None
-    exit_function: Callable[[PhonieTVEvent | None], None] | None
+    exit_function: Callable[[], None] | None
     transitions: Dict[str, PhonieTVState]
     parent_state: PhonieTVState | None
 
