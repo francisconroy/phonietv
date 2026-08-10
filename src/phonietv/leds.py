@@ -73,3 +73,15 @@ class LedsTask(PhonieTVTask):
                 pass
 
             time.sleep(LEDS_TASK_SLEEP_TIME_S)
+
+if __name__ == "__main__":
+    stop_event = threading.Event()
+    leds_task = LedsTask("test_leds", stop_event)
+    leds_task.start()
+    time.sleep(1)
+    leds_task.inbound_queue.put(SetLedIndicatorCount(3, StatusColours.COLOUR_BLUE))
+    time.sleep(2)
+    leds_task.inbound_queue.put(SetLedsToSameColour(StatusColours.COLOUR_RED))
+    time.sleep(2)
+    stop_event.set()
+    leds_task.join()
