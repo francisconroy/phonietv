@@ -119,11 +119,24 @@ wheels = [
 ]
 
 [[package]]
+name = "blinkt"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "rpi-gpio" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/33/fb5a3bfc2e9d467a6f9892088f08c0b88b4bbb0237a696b1b25cacab54d5/blinkt-0.1.2.tar.gz", hash = "sha256:db8f54a22a7382476e4ac7531974fe01baee916b01f415bf3817c02820d59f3f", size = 5178, upload-time = "2018-05-23T11:06:00.7Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/24/b8244726dd74e6d140a162e2587e6df7d65cac18558f5df7cad9e9f9f1ff/blinkt-0.1.2-py3-none-any.whl", hash = "sha256:b090d1eccb5b8b5caaaeb25cfdb96f51cc12e98a8ab81c667c19b58b365f2818", size = 6577, upload-time = "2018-05-23T11:05:59.578Z" },
+]
+
+[[package]]
 name = "phonietv"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "adafruit-circuitpython-pn532" },
+    { name = "blinkt", marker = "sys_platform == 'linux'" },
     { name = "python-vlc" },
 ]
 
@@ -135,6 +148,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "adafruit-circuitpython-pn532", specifier = ">=2.4.9" },
+    { name = "blinkt", marker = "sys_platform == 'linux'", specifier = ">=0.1.2" },
     { name = "python-vlc", specifier = ">=3.0.21203" },
 ]
 
@@ -179,6 +193,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/00/6b/ce3727395e52b7b76
 wheels = [
     { url = "https://files.pythonhosted.org/packages/28/b8/27e6312e86408a44fe16bd28ee12dd98608b39f7e7e57884a24e8f29b573/pyusb-1.3.1-py3-none-any.whl", hash = "sha256:bf9b754557af4717fe80c2b07cc2b923a9151f5c08d17bdb5345dac09d6a0430", size = 58465, upload-time = "2025-01-08T23:45:00.029Z" },
 ]
+
+[[package]]
+name = "rpi-gpio"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/0f/10b524a12b3445af1c607c27b2f5ed122ef55756e29942900e5c950735f2/RPi.GPIO-0.7.1.tar.gz", hash = "sha256:cd61c4b03c37b62bba4a5acfea9862749c33c618e0295e7e90aa4713fb373b70", size = 29090, upload-time = "2022-02-06T15:15:06.022Z" }
 
 [[package]]
 name = "sysv-ipc"

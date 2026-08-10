@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "adafruit-circuitpython-pn532>=2.4.9",
+    "blinkt>=0.1.2 ; sys_platform == 'linux'",
     "python-vlc>=3.0.21203",
 ]
 
