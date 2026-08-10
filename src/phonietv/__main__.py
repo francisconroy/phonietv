@@ -30,16 +30,13 @@ def main():
     # All synchronisation between tasks happens in this main thread, so that the tasks can run independently and not block each other
 
     def enter_idle_state(_):
-        LOGGER.info("Entering idle state")
         main_queue.put(PhonieTVEvent("token_detected", "abcd"))
 
-    def enter_lockout_state(_):
-        LOGGER.info("Entering lockout state")
 
     def enter_playlist_state(_):
         main_queue.put(PhonieTVEvent("token_removed", None))
 
-    lockout_state = PhonieTVState("lockout", enter_lockout_state, None, {}, None)
+    lockout_state = PhonieTVState("lockout", None, None, {}, None)
     idle_state = PhonieTVState("idle", enter_idle_state, None, {}, None)
     active_state = PhonieTVState("active", None, None, {}, None)
     playing_state = PhonieTVState("playing", None, None, {}, active_state)
