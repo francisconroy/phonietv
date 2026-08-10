@@ -1,17 +1,17 @@
 import logging
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, Callable
 
 from .event import PhonieTVEvent
 
 LOGGER = logging.getLogger(__name__)
 
+
 @dataclass
 class PhonieTVState:
     name: str
-    entry_function: Callable[[PhonieTVEvent|None],None] | None
-    exit_function: Callable[[PhonieTVEvent|None],None] | None
+    entry_function: Callable[[PhonieTVEvent | None], None] | None
+    exit_function: Callable[[PhonieTVEvent | None], None] | None
     transitions: Dict[str, PhonieTVState]
     parent_state: PhonieTVState | None
 
@@ -23,7 +23,6 @@ class StateMachine:
         if initial_state.entry_function is not None:
             initial_state.entry_function(None)
         self.current_state = initial_state
-
 
     def handle_event(self, event: PhonieTVEvent):
         next_state = self.current_state.transitions.get(event.event_type)
