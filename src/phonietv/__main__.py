@@ -1,33 +1,24 @@
 import logging
 import queue
-import time
-from csv import excel
-from dataclasses import dataclass
 from enum import Enum, auto
 from queue import Queue
-from typing import Callable, Dict
 
 from phonietv.event import PhonieTVEvent
+from phonietv.statemachine import PhonieTVState, StateMachine
 
 
 class PhonieTVStateId(Enum):
     IDLE = auto()
+    ACTIVE = auto()
     PLAYING = auto()
     PLAYLIST = auto()
     LOCKOUT = auto()
 
-@dataclass
-class PhonieTVState:
-    name: str
-    entry_function: Callable[[PhonieTVEvent|None],None] | None
-    exit_function: Callable[[PhonieTVEvent|None],None] | None
-    transitions: Dict[str, PhonieTVStateId]
-    parent_state: PhonieTVStateId | None
 
 LOGGER = logging.getLogger(__name__)
 
-def main():
 
+def main():
     logging.basicConfig(level=logging.DEBUG)
     LOGGER.info("Hello from phonietv!")
 
@@ -40,72 +31,36 @@ def main():
 
     def enter_idle_state(_):
         LOGGER.info("Entering idle state")
-        main_queue.put_nowait(PhonieTVEvent("change_to_lockout", None))
+        main_queue.put(PhonieTVEvent("token_detected", "abcd"))
 
     def enter_lockout_state(_):
         LOGGER.info("Entering lockout state")
-        main_queue.put_nowait(PhonieTVEvent("ya_mum", None))
 
+    lockout_state = PhonieTVState("lockout", enter_lockout_state, None, {}, None)
+    idle_state = PhonieTVState("idle", enter_idle_state, None, {}, None)
+    active_state = PhonieTVState("active", None, None, {}, None)
+    playing_state = PhonieTVState("playing", None, None, {}, active_state)
+    playlist_state = PhonieTVState("playlist", None, None, {}, active_state)
 
-    phonie_tv_states = {PhonieTVStateId.IDLE: PhonieTVState("idle", enter_idle_state, None, {"change_to_lockout": PhonieTVStateId.LOCKOUT}, None),
-                        PhonieTVStateId.PLAYING: PhonieTVState("playing", None, None, {}, None),
-                                      PhonieTVStateId.PLAYLIST: PhonieTVState("playlist", None, None, {}, None),
-    PhonieTVStateId.LOCKOUT: PhonieTVState("lockout", enter_lockout_state, None, {"change_to_idle": PhonieTVStateId.IDLE}, None)
-                        }
+    ## Register the transitions
+    lockout_state.transitions.update({"lockout_timer_reset": idle_state})
+    idle_state.transitions.update({"token_detected": playlist_state})
+    active_state.transitions.update({"token_removed": idle_state, "lockout_timer_expired": lockout_state})
+    playing_state.transitions.update({"token_detected": playlist_state, "media_finished": playlist_state})
+    playlist_state.transitions.update({"play_media": playing_state, "token_detected": playlist_state})
 
-    current_state = phonie_tv_states[PhonieTVStateId.IDLE]
-    # Run the entry function for the initial state
-    if current_state.entry_function is not None:
-        current_state.entry_function(None)
+    # State machine
+    state_machine = StateMachine(idle_state)
+
     while True:
         # Process events on the queue
         try:
-            event = main_queue.get_nowait()
+            event = main_queue.get(timeout=0.1)
             LOGGER.info("Processing event: %s", event.event_type)
-            next_state_id = current_state.transitions.get(event.event_type)
-            current_state_has_parent = current_state.parent_state is not None
-            if next_state_id is None and not current_state_has_parent:
-                continue
-            elif next_state_id is None and current_state_has_parent:
-                current_parent_state = phonie_tv_states.get(current_state.parent_state)
-                next_state_id = current_parent_state.transitions.get(event.event_type)
-                if next_state_id is None:
-                    continue
-
-            next_state = phonie_tv_states[next_state_id]
+            state_machine.handle_event(event)
         except queue.Empty:
             continue
 
-        # Handle state transitions
-        ## Exiting
-        LOGGER.info("Exiting state: %s", current_state.name)
-        if current_state.exit_function is not None:
-            current_state.exit_function()
-
-        # Handle parent state transitions if needed
-        current_has_parent = current_state.parent_state is not None
-        next_has_parent = next_state.parent_state is not None
-        # We only need to exit out to the same level as the next state.
-        # we only support a single level of nesting for now, so we don't need to worry about multiple levels of nesting
-        current_parent_state = phonie_tv_states.get(current_state.parent_state)
-        next_parent = phonie_tv_states.get(next_state.parent_state)
-        if current_has_parent and next_has_parent:
-            if current_state.parent_state == next_state.parent_state:
-                pass # Don't need to exit from parent
-            else:
-                current_parent_state.exit_function()
-                next_parent.entry_function(event)
-        elif current_has_parent:
-            current_parent_state.exit_function()
-        elif next_has_parent:
-            next_parent.entry_function(event)
-
-        ## Entering
-        LOGGER.info("Entering state: %s", next_state.name)
-        if next_state.entry_function is not None:
-            next_state.entry_function(event)
-
-        current_state = next_state
 
 if __name__ == "__main__":
     main()
