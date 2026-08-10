@@ -36,11 +36,14 @@ def main():
     def enter_lockout_state(_):
         LOGGER.info("Entering lockout state")
 
+    def enter_playlist_state(_):
+        main_queue.put(PhonieTVEvent("play_media", None))
+
     lockout_state = PhonieTVState("lockout", enter_lockout_state, None, {}, None)
     idle_state = PhonieTVState("idle", enter_idle_state, None, {}, None)
     active_state = PhonieTVState("active", None, None, {}, None)
     playing_state = PhonieTVState("playing", None, None, {}, active_state)
-    playlist_state = PhonieTVState("playlist", None, None, {}, active_state)
+    playlist_state = PhonieTVState("playlist", enter_playlist_state, None, {}, active_state)
 
     ## Register the transitions
     lockout_state.transitions.update({"lockout_timer_reset": idle_state})
