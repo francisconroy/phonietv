@@ -2,7 +2,7 @@
 ```mermaid
 ---
 config:
-  layout: elk
+  layout: dagre
 ---
 stateDiagram
   direction TB
