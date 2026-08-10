@@ -37,7 +37,7 @@ def main():
         LOGGER.info("Entering lockout state")
 
     def enter_playlist_state(_):
-        main_queue.put(PhonieTVEvent("play_media", None))
+        main_queue.put(PhonieTVEvent("token_removed", None))
 
     lockout_state = PhonieTVState("lockout", enter_lockout_state, None, {}, None)
     idle_state = PhonieTVState("idle", enter_idle_state, None, {}, None)
