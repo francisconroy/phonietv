@@ -21,12 +21,9 @@ class PlayerTask(PhonieTVTask):
         self.current_media_url: str = ""
 
     def stop_player(self):
-        if self.player.is_playing():
-            self.player.stop()
-            self.current_media_url = ""
-            LOGGER.info("Media player stopped.")
-        else:
-            LOGGER.info("Media player is not playing.")
+        self.player.stop()
+        self.current_media_url = ""
+        LOGGER.info("Media player stopped.")
 
     def _media_finished_callback(self, event):
         LOGGER.info("Media finished playing.")
