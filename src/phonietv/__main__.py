@@ -64,9 +64,9 @@ def main():
     playlist_state = PhonieTVState("playlist", enter_playlist_state, None, {}, active_state)
 
     ## Register the transitions
-    lockout_state.transitions.update({"lockout_timer_reset": idle_state})
+    lockout_state.transitions.update({"timer_reset": idle_state})
     idle_state.transitions.update({"token_detected": playlist_state})
-    active_state.transitions.update({"token_removed": idle_state, "lockout_timer_expired": lockout_state})
+    active_state.transitions.update({"token_removed": idle_state, "timer_expired_event": lockout_state})
     playing_state.transitions.update({"token_detected": playlist_state, "media_finished": playlist_state})
     playlist_state.transitions.update({"play_media": playing_state, "token_detected": playlist_state})
 
