@@ -9,6 +9,7 @@ from digitalio import DigitalInOut
 
 from adafruit_pn532.spi import PN532_SPI
 
+from .event import PhonieTVEvent
 from .threading import PhonieTVTask
 from .nfc import parse_ntag213_text
 
@@ -27,6 +28,7 @@ class Pn532Task(PhonieTVTask):
 
         ic, ver, rev, support = self.pn532.firmware_version
         LOGGER.info(f"Found PN532 with firmware version: {ver}.{rev}")
+        self.previous_text = ""
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
@@ -44,8 +46,19 @@ class Pn532Task(PhonieTVTask):
             if self._check_for_card():
                 text = self._extract_string_data()
                 if text:
-                    LOGGER.info(f"Extracted text: {text}")
-            self.pn532.reset()
+                    LOGGER.debug(f"Extracted text: {text}")
+                    if text != self.previous_text:
+                        self.previous_text = text
+                        # Send event to main thread
+                        self.publish_event(
+                            PhonieTVEvent("token_detected", {"text": text})
+                        )
+                        LOGGER.info(f"Text changed to: {text}")
+            elif self.previous_text:
+                LOGGER.debug(f"No card detected")
+                self.previous_text = ""
+                self.publish_event(PhonieTVEvent("token_removed", {}))
+            # self.pn532.reset()
 
             time.sleep(PN532_TASK_SLEEP_TIME_S)
 
@@ -57,35 +70,24 @@ class Pn532Task(PhonieTVTask):
         return False
 
     def _extract_string_data(self) -> str:
-        try:
-            data = bytes()
-            for i in range(35):
-                card_present = self.pn532.read_passive_target(timeout=0.1)
-                if not card_present:
-                    LOGGER.warning("Card removed during read operation.")
-                    break
-                persistent_read_error = False
-                for _ in range(2):  # Retry up to 3 times
-                    block_data = self.pn532.ntag2xx_read_block(NTAG213_DATA_OFFSET + i)
-                    if block_data is None:
-                        print(f"Failed to read block {NTAG213_DATA_OFFSET + i}")
-                        break
-                    data += block_data
-                    break  # Exit the retry loop if successful
-                else:
-                    persistent_read_error = True
-                if persistent_read_error:
-                    break
-
-            language, text = parse_ntag213_text(data)
-            return text
-        except ValueError as e:
-            LOGGER.error(f"Failed to parse NDEF text: {e}")
-            return ""
-
+        data = bytes()
+        for i in range(35):
+            block_data = self.pn532.ntag2xx_read_block(NTAG213_DATA_OFFSET + i)
+            if block_data is None:
+                LOGGER.debug(f"Failed to read block {NTAG213_DATA_OFFSET + i}")
+                break
+            data += block_data
+            try:
+                language, text = parse_ntag213_text(data)
+                return text
+            except ValueError as e:
+                LOGGER.debug(f"Failed to parse NDEF text: {e}")
+                pass
+        LOGGER.error("Failed to extract string data from card, possibly because card was removed early.")
+        return ""
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     # LOGGER.setLevel(level=logging.DEBUG)
     if True:
         stop_event = threading.Event()
