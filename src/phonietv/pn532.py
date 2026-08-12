@@ -63,7 +63,7 @@ class Pn532Task(PhonieTVTask):
     def _check_for_card(self) -> bool:
         uid = self.pn532.read_passive_target(timeout=0.5)
         if uid is not None:
-            LOGGER.info(f"Found card with UID: {[hex(i) for i in uid]}")
+            LOGGER.debug(f"Found card with UID: {[hex(i) for i in uid]}")
             return True
         return False
 
