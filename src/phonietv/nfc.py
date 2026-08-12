@@ -1,4 +1,4 @@
-def parse_ntag213_text(data: bytes):
+def parse_ntag213_text(data: bytes) -> tuple[str, str]:
     """
     Parse an NTAG213 memory dump and return (language, text).
 
