@@ -42,6 +42,7 @@ def main():
     pn532_task.attach_event_queues({main_queue})
     player_task.attach_event_queues({main_queue})
     playlist_task.attach_event_queues({main_queue})
+    timer_task.attach_event_queues({main_queue})
 
     def enter_playlist_state(inevent: PhonieTVEvent | None):
         if inevent is not None:
