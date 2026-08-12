@@ -33,15 +33,15 @@ class Pn532Task(PhonieTVTask):
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
             # Check for events
-            try:
-                event_to_process = self.inbound_queue.get_nowait()
-                LOGGER.info(f"got event {event_to_process.event_type}")
-                if event_to_process.event_type == "play_media":
-                    # Handle play_media event
-                    pass
-
-            except queue.Empty:
-                pass
+            # try:
+            #     event_to_process = self.inbound_queue.get_nowait()
+            #     LOGGER.info(f"got event {event_to_process.event_type}")
+            #     if event_to_process.event_type == "play_media":
+            #         # Handle play_media event
+            #         pass
+            #
+            # except queue.Empty:
+            #     pass
 
             if self._check_for_card():
                 text = self._extract_string_data()
