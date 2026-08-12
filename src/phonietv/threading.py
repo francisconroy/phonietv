@@ -40,7 +40,7 @@ class PhonieTVTask(ABC):
         :param event:
         :return:
         """
-        LOGGER.warning(f"{self.task_name}: publishing event {event.event_type}")
+        LOGGER.info(f"{self.task_name}: publishing event {event.event_type}, payload: {event.event_payload}")
         with self.event_queue_lock:
             for queue in self.event_queues:
                 queue.put(event)
