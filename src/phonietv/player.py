@@ -14,7 +14,7 @@ PLAYER_TASK_SLEEP_TIME_S = 0.1
 class PlayerTask(PhonieTVTask):
     def __init__(self, task_name: str, stop_event):
         super().__init__(task_name, stop_event)
-        self.instance = vlc.Instance('--no-audio', '--fullscreen')
+        self.instance = vlc.Instance('--fullscreen')
         self.player = self.instance.media_player_new()
         self.events = self.player.event_manager()
         self.events.event_attach(vlc.EventType.MediaPlayerEndReached, self._media_finished_callback)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # player = vlc.MediaPlayer()
     # player = vlc.MediaPlayer(r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4')
-    instance = vlc.Instance('--no-audio', '--fullscreen')
+    instance = vlc.Instance('--fullscreen')
     player = instance.media_player_new() 
     media_1 = instance.media_new(r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4')
     media_2 = instance.media_new(r'C:\Users\Francis\Downloads\Finding Nemo.mp4')
