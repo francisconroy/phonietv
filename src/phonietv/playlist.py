@@ -6,14 +6,15 @@ import time
 from .event import PhonieTVEvent
 from .threading import PhonieTVTask
 
-
 LOGGER = logging.getLogger(__name__)
 
+
 class PlaylistTask(PhonieTVTask):
-    MEDIA_URL_MAPPING = {"Grinch":"/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4", "Paw Patrol":"/mnt/video/movies/kids_movies/Paw Patrol The Movie.mp4"}
+    MEDIA_URL_MAPPING = {"Grinch": "/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4",
+                         "Paw Patrol": "/mnt/video/movies/kids_movies/Paw Patrol The Movie.mp4"}
+
     def __init__(self, task_name: str, stop_event):
         super().__init__(task_name, stop_event)
-
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
