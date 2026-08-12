@@ -51,15 +51,13 @@ class Pn532Task(PhonieTVTask):
                         self.previous_text = text
                         # Send event to main thread
                         self.publish_event(
-                            PhonieTVEvent("token_detected", {"text": text})
+                            PhonieTVEvent("token_detected", text)
                         )
                         LOGGER.info(f"Text changed to: {text}")
             elif self.previous_text:
                 LOGGER.debug(f"No card detected")
                 self.previous_text = ""
-                self.publish_event(PhonieTVEvent("token_removed", {}))
-            # self.pn532.reset()
-
+                self.publish_event(PhonieTVEvent("token_removed", None))
             time.sleep(PN532_TASK_SLEEP_TIME_S)
 
     def _check_for_card(self) -> bool:
