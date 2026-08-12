@@ -51,9 +51,11 @@ def main():
     def enter_playing_state(inevent: PhonieTVEvent | None):
         if inevent is not None:
             player_task.inbound_queue.put(inevent)
+        timer_task.inbound_queue.put(PhonieTVEvent("timer_set_state_event", True))
 
     def exit_playing_state():
         player_task.inbound_queue.put(PhonieTVEvent("stop_media", None))
+        timer_task.inbound_queue.put(PhonieTVEvent("timer_set_state_event", False))
 
     lockout_state = PhonieTVState("lockout", None, None, {}, None)
     idle_state = PhonieTVState("idle", None, None, {}, None)
