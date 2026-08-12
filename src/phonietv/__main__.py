@@ -1,10 +1,14 @@
 import logging
 import queue
+import threading
 from enum import Enum, auto
 from queue import Queue
 
-from phonietv.event import PhonieTVEvent
-from phonietv.statemachine import PhonieTVState, StateMachine
+from .playlist import PlaylistTask
+from .player import PlayerTask
+from .event import PhonieTVEvent
+from .pn532 import Pn532Task
+from .statemachine import PhonieTVState, StateMachine
 
 
 class PhonieTVStateId(Enum):
@@ -19,28 +23,39 @@ LOGGER = logging.getLogger(__name__)
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     LOGGER.info("Hello from phonietv!")
 
     ## This app uses Queues to communicate events
     main_queue = Queue()
+    stop_event = threading.Event()
 
     # Set up the modules and connect them together as needed
+    pn532_task = Pn532Task("pn532_task", stop_event)
+    player_task = PlayerTask("player_task", stop_event)
+    playlist_task = PlaylistTask("playlist_task", stop_event)
+
+    # Hook up event queues
+    pn532_task.attach_event_queues({main_queue})
+    player_task.attach_event_queues({main_queue})
+    playlist_task.attach_event_queues({main_queue})
+
+    # Start tasks
 
     # All synchronisation between tasks happens in this main thread, so that the tasks can run independently and not block each other
 
-    def enter_idle_state(_):
-        main_queue.put(PhonieTVEvent("token_detected", "abcd"))
+    # def enter_idle_state(_):
+    #     main_queue.put(PhonieTVEvent("token_detected", "abcd"))
 
 
-    def enter_playlist_state(_):
-        main_queue.put(PhonieTVEvent("token_removed", None))
+    # def enter_playlist_state(_):
+    #     main_queue.put(PhonieTVEvent("token_removed", None))
 
     lockout_state = PhonieTVState("lockout", None, None, {}, None)
-    idle_state = PhonieTVState("idle", enter_idle_state, None, {}, None)
+    idle_state = PhonieTVState("idle", None, None, {}, None)
     active_state = PhonieTVState("active", None, None, {}, None)
     playing_state = PhonieTVState("playing", None, None, {}, active_state)
-    playlist_state = PhonieTVState("playlist", enter_playlist_state, None, {}, active_state)
+    playlist_state = PhonieTVState("playlist", None, None, {}, active_state)
 
     ## Register the transitions
     lockout_state.transitions.update({"lockout_timer_reset": idle_state})
@@ -51,6 +66,11 @@ def main():
 
     # State machine
     state_machine = StateMachine(idle_state)
+
+    # Start the tasks
+    pn532_task.start()
+    player_task.start()
+    playlist_task.start()
 
     while True:
         # Process events on the queue
