@@ -1,3 +1,4 @@
+import datetime
 import logging
 import math
 import threading
@@ -34,9 +35,11 @@ class TimerTask(PhonieTVTask):
     def __init__(self, task_name: str, stop_event, num_indicators: int, timer_duration_s: float):
         super().__init__(task_name, stop_event)
         self.start_time = None
+        self.elapsed_time_for_today = 0
         self.num_indicators = num_indicators
         self.prev_indicator_count = 0
         self.timer_duration_s = timer_duration_s
+        self.timer_start_day: int = datetime.datetime.now().toordinal()  # Day on which the timer expired
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
@@ -54,12 +57,20 @@ class TimerTask(PhonieTVTask):
                 pass
             # Handle indicator update
             if self.start_time is not None:
-                elapsed_time = time.monotonic() - self.start_time
+                elapsed_time_current_block = time.monotonic() - self.start_time
+                elapsed_time = self.elapsed_time_for_today + elapsed_time_current_block
                 if self.is_expired(elapsed_time):
                     self.publish_event(TimerExpiredEvent())
                     self.stop_timer()
                 else:
                     self.handle_indicator_count(elapsed_time)
+
+            # Check if the day has changed since the timer expired
+            day_now = datetime.datetime.now().toordinal()
+            if day_now != self.timer_start_day:
+                self.publish_event(PhonieTVEvent("timer_reset", None))
+                self.timer_start_day = day_now
+                self.elapsed_time_for_today = 0
 
             time.sleep(TIMER_TASK_SLEEP_TIME_S)
 
@@ -77,10 +88,14 @@ class TimerTask(PhonieTVTask):
     def start_timer(self):
         if self.start_time is None:
             self.start_time = time.monotonic()
+            self.timer_start_day = datetime.datetime.now().toordinal()
             self.prev_indicator_count = 0
         self.publish_event(TimerIndicatorEvent(self.get_indicator_count(self.num_indicators, self.timer_duration_s, 0)))
 
     def stop_timer(self):
+        if self.start_time is not None:
+            elapsed_time = time.monotonic() - self.start_time
+            self.elapsed_time_for_today += elapsed_time
         self.start_time = None
         self.publish_event(TimerIndicatorEvent(0))
 
