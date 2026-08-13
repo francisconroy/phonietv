@@ -1,22 +1,21 @@
 import logging
-import queue
 import threading
 import time
 
 import board
 import busio
+from adafruit_pn532.spi import PN532_SPI
 from digitalio import DigitalInOut
 
-from adafruit_pn532.spi import PN532_SPI
-
 from .event import PhonieTVEvent
-from .threading import PhonieTVTask
 from .nfc import parse_ntag213_text
+from .threading import PhonieTVTask
 
 LOGGER = logging.getLogger(__name__)
 PN532_TASK_SLEEP_TIME_S = 0.1
 
 NTAG213_DATA_OFFSET = 0x04
+
 
 class Pn532Task(PhonieTVTask):
     def __init__(self, task_name: str, stop_event):
@@ -84,6 +83,7 @@ class Pn532Task(PhonieTVTask):
         LOGGER.error("Failed to extract string data from card, possibly because card was removed early.")
         return ""
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     # LOGGER.setLevel(level=logging.DEBUG)
@@ -122,10 +122,10 @@ if __name__ == "__main__":
         # # Read block #6
         # ntag2xx_block = pn532.ntag2xx_read_block(4)
         data = bytes()
-        for i in range (35):
-            block_data = pn532.ntag2xx_read_block(NTAG213_DATA_OFFSET+i)
+        for i in range(35):
+            block_data = pn532.ntag2xx_read_block(NTAG213_DATA_OFFSET + i)
             if block_data is None:
-                print(f"Failed to read block {NTAG213_DATA_OFFSET+i}")
+                print(f"Failed to read block {NTAG213_DATA_OFFSET + i}")
                 break
             data += block_data
         language, text = parse_ntag213_text(data)
