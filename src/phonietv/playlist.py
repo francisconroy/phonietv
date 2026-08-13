@@ -3,6 +3,7 @@ import os
 import queue
 import threading
 import time
+from typing import List
 
 from .event import PhonieTVEvent
 from .threading import PhonieTVTask
@@ -19,15 +20,18 @@ class PlaylistTask(PhonieTVTask):
         super().__init__(task_name, stop_event)
 
     @staticmethod
-    def get_media_from_url(url: str) -> str:
+    def get_media_from_url(url: str) -> List[str] | None:
         if os.path.isfile(url):
-            return url
+            return [url]
         elif os.path.isdir(url):
+            file_list = []
             # If it's a directory, return the first media file found
             for root, dirs, files in os.walk(url):
                 for file in files:
                     if file.endswith(('.mp4', '.avi', '.mkv')):
-                        return os.path.join(root, file)
+                        file_list.append(os.path.join(root, file))
+        return None
+
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
             # Check for events
@@ -39,7 +43,9 @@ class PlaylistTask(PhonieTVTask):
                     token_name = event_to_process.event_payload
                     media_url = self.MEDIA_URL_MAPPING.get(token_name)
                     if media_url is not None:
-                        self.publish_event(PhonieTVEvent("play_media", self.get_media_from_url(media_url)))
+                        matching_paths = self.get_media_from_url(media_url)
+                        if matching_paths is not None:
+                            self.publish_event(PhonieTVEvent("play_media", matching_paths[0]))
                     else:
                         LOGGER.error(f"No media URL found for token: {token_name}")
                     pass
