@@ -60,8 +60,8 @@ class TimerTask(PhonieTVTask):
                 elapsed_time_current_block = time.monotonic() - self.start_time
                 elapsed_time = self.elapsed_time_for_today + elapsed_time_current_block
                 if self.is_expired(elapsed_time):
-                    self.stop_timer()
                     self.publish_event(TimerExpiredEvent())
+                    self.stop_timer()
                 else:
                     self.handle_indicator_count(elapsed_time)
 
