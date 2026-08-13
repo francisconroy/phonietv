@@ -39,7 +39,7 @@ class TimerTask(PhonieTVTask):
         self.num_indicators = num_indicators
         self.prev_indicator_count = 0
         self.timer_duration_s = timer_duration_s
-        self.timer_start_day: int = datetime.datetime.now().day  # Day on which the timer expired
+        self.timer_start_day: int = datetime.datetime.now().toordinal()  # Day on which the timer expired
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
@@ -66,7 +66,7 @@ class TimerTask(PhonieTVTask):
                     self.handle_indicator_count(elapsed_time)
 
             # Check if the day has changed since the timer expired
-            day_now = datetime.datetime.now().day
+            day_now = datetime.datetime.now().toordinal()
             if day_now != self.timer_start_day:
                 self.publish_event(PhonieTVEvent("timer_reset", None))
                 self.elapsed_time_for_today = 0
@@ -87,7 +87,7 @@ class TimerTask(PhonieTVTask):
     def start_timer(self):
         if self.start_time is None:
             self.start_time = time.monotonic()
-            self.timer_start_day = datetime.datetime.now().day
+            self.timer_start_day = datetime.datetime.now().toordinal()
             self.prev_indicator_count = 0
         self.publish_event(TimerIndicatorEvent(self.get_indicator_count(self.num_indicators, self.timer_duration_s, 0)))
 
