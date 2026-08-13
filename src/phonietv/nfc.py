@@ -12,8 +12,6 @@ def parse_ntag213_text(data: bytes) -> tuple[str, str]:
       - UTF-8 and UTF-16 text
     """
 
-
-
     pos = 0
 
     while pos < len(data):
@@ -74,12 +72,12 @@ def parse_ndef_text(ndef: bytes):
     pos += 1
 
     # Header flags
-    mb = bool(header & 0x80)       # Message Begin
-    me = bool(header & 0x40)       # Message End
-    cf = bool(header & 0x20)       # Chunk Flag
-    sr = bool(header & 0x10)       # Short Record
-    il = bool(header & 0x08)       # ID Length present
-    tnf = header & 0x07            # Type Name Format
+    mb = bool(header & 0x80)  # Message Begin
+    me = bool(header & 0x40)  # Message End
+    cf = bool(header & 0x20)  # Chunk Flag
+    sr = bool(header & 0x10)  # Short Record
+    il = bool(header & 0x08)  # ID Length present
+    tnf = header & 0x07  # Type Name Format
 
     if not mb:
         raise ValueError("Not the beginning of an NDEF message")
