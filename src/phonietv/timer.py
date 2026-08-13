@@ -69,6 +69,7 @@ class TimerTask(PhonieTVTask):
             day_now = datetime.datetime.now().toordinal()
             if day_now != self.timer_start_day:
                 self.publish_event(PhonieTVEvent("timer_reset", None))
+                self.timer_start_day = day_now
                 self.elapsed_time_for_today = 0
 
             time.sleep(TIMER_TASK_SLEEP_TIME_S)
