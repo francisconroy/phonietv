@@ -27,6 +27,7 @@ class Pn532Task(PhonieTVTask):
 
         ic, ver, rev, support = self.pn532.firmware_version
         LOGGER.info(f"Found PN532 with firmware version: {ver}.{rev}")
+        self.pn532.SAM_configuration()
         self.previous_text = ""
 
     def task_function(self, stop_event: threading.Event):
