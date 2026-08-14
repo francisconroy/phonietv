@@ -57,10 +57,14 @@ class PlayerTask(PhonieTVTask):
         self.events = self.player.event_manager()
         self.events.event_attach(vlc.EventType.MediaPlayerEndReached, self._media_finished_callback)
         self.current_media: PlayMediaPayload | None = None
-        self.location_data: Dict[str, int] = {}
-        self.location_data = load_location_data()
+        self.location_data: Dict[str, int]= load_location_data()
 
     def stop_player(self):
+        if self.player.is_playing():
+            location = self.player.get_time()
+            LOGGER.info(f"Stopping media player at time: {location} ms")
+            self.location_data[self.current_media.media_path] = location
+            save_location_data(self.location_data)
         self.player.stop()
         self.current_media = None
         LOGGER.info("Media player stopped.")
@@ -78,6 +82,9 @@ class PlayerTask(PhonieTVTask):
                 ),
             )
         )
+        del self.location_data[self.current_media_url]
+        save_location_data(self.location_data)
+        self.publish_event(PhonieTVEvent("media_finished", None))
 
     def _save_location(self):
         if self.player.is_playing():
@@ -101,7 +108,6 @@ class PlayerTask(PhonieTVTask):
                     self.player.set_mrl(media.get_mrl())
                     self.player.play()
                 elif event_to_process.event_type == "stop_media":
-                    self._save_location()
                     self.stop_player()
             except queue.Empty:
                 pass
