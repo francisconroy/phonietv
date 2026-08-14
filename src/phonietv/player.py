@@ -117,8 +117,8 @@ class PlayerTask(PhonieTVTask):
             time.sleep(PLAYER_TASK_SLEEP_TIME_S)
 
 if __name__ == "__main__":
-    stop_event = threading.Event()
-    player_task = PlayerTask("test_player", stop_event)
+    stop_event_in = threading.Event()
+    player_task = PlayerTask("test_player", stop_event_in)
     player_task.start()
     player_task.inbound_queue.put(
         PhonieTVEvent(
