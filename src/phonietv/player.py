@@ -3,13 +3,21 @@ import logging
 import queue
 import threading
 import time
+from dataclasses import dataclass
 import vlc
 
 from .event import PhonieTVEvent
+from .playlist import PlayMediaPayload
 from .threading import PhonieTVTask
 
 LOGGER = logging.getLogger(__name__)
 PLAYER_TASK_SLEEP_TIME_S = 0.1
+
+
+@dataclass(frozen=True)
+class MediaFinishedPayload:
+    token_name: str
+    media_path: str
 
 class PlayerTask(PhonieTVTask):
     def __init__(self, task_name: str, stop_event):
@@ -18,16 +26,26 @@ class PlayerTask(PhonieTVTask):
         self.player = self.instance.media_player_new()
         self.events = self.player.event_manager()
         self.events.event_attach(vlc.EventType.MediaPlayerEndReached, self._media_finished_callback)
-        self.current_media_url: str = ""
+        self.current_media: PlayMediaPayload | None = None
 
     def stop_player(self):
         self.player.stop()
-        self.current_media_url = ""
+        self.current_media = None
         LOGGER.info("Media player stopped.")
 
     def _media_finished_callback(self, event):
         LOGGER.info("Media finished playing.")
-        self.publish_event(PhonieTVEvent("media_finished", None))
+        if self.current_media is None:
+            return
+        self.publish_event(
+            PhonieTVEvent(
+                "media_finished",
+                MediaFinishedPayload(
+                    token_name=self.current_media.token_name,
+                    media_path=self.current_media.media_path,
+                ),
+            )
+        )
 
     def _save_location(self):
         # Save the current location of the media player
@@ -43,8 +61,11 @@ class PlayerTask(PhonieTVTask):
                 event_to_process = self.inbound_queue.get_nowait()
                 LOGGER.info(f"got event {event_to_process.event_type}")
                 if event_to_process.event_type == "play_media":
-                    self.current_media_url = event_to_process.event_payload
-                    media = self.instance.media_new(self.current_media_url)
+                    if not isinstance(event_to_process.event_payload, PlayMediaPayload):
+                        LOGGER.error("Invalid play_media payload: %r", event_to_process.event_payload)
+                        continue
+                    self.current_media = event_to_process.event_payload
+                    media = self.instance.media_new(self.current_media.media_path)
                     self.player.set_mrl(media.get_mrl())
                     self.player.play()
                 elif event_to_process.event_type == "stop_media":
@@ -59,11 +80,21 @@ if __name__ == "__main__":
     stop_event = threading.Event()
     player_task = PlayerTask("test_player", stop_event)
     player_task.start()
-    player_task.inbound_queue.put(PhonieTVEvent("play_media", r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4'))
+    player_task.inbound_queue.put(
+        PhonieTVEvent(
+            "play_media",
+            PlayMediaPayload(token_name="debug", media_path=r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4'),
+        )
+    )
     time.sleep(2)
     player_task.inbound_queue.put(PhonieTVEvent("stop_media", None))
     time.sleep(2)
-    player_task.inbound_queue.put(PhonieTVEvent("play_media", r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4'))
+    player_task.inbound_queue.put(
+        PhonieTVEvent(
+            "play_media",
+            PlayMediaPayload(token_name="debug", media_path=r'C:\Users\Francis\Downloads\sample-mp4-15s-11638kb.mp4'),
+        )
+    )
     input()
 
     # player = vlc.MediaPlayer()
