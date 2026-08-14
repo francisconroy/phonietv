@@ -105,8 +105,10 @@ class PlayerTask(PhonieTVTask):
                         continue
                     self.current_media = event_to_process.event_payload
                     media = self.instance.media_new(self.current_media.media_path)
+                    start_time = self.location_data.get(self.current_media.media_path, 0)
                     self.player.set_mrl(media.get_mrl())
                     self.player.play()
+                    self.player.set_time(start_time)
                 elif event_to_process.event_type == "stop_media":
                     self.stop_player()
             except queue.Empty:
