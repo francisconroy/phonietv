@@ -82,8 +82,8 @@ class PlayerTask(PhonieTVTask):
                 ),
             )
         )
-        self.location_data.pop(self.current_media.media_path,None)
-        save_location_data(self.location_data)
+        if self.location_data.pop(self.current_media.media_path,None) is not None:
+            save_location_data(self.location_data)
         self.publish_event(PhonieTVEvent("media_finished", None))
 
     def _save_location(self):
