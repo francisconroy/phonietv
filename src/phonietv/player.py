@@ -82,7 +82,7 @@ class PlayerTask(PhonieTVTask):
                 ),
             )
         )
-        del self.location_data[self.current_media.media_path]
+        self.location_data.pop(self.current_media.media_path,None)
         save_location_data(self.location_data)
         self.publish_event(PhonieTVEvent("media_finished", None))
 
