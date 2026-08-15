@@ -43,3 +43,13 @@ The interface consists of:
   - Youtube
   - Netflix
 - Support custom playlists, map a custom list of items to a token
+
+
+### Mounting a CIFS (Samba) share in Raspberry PI OS
+1. Install cifs-utils if not already installed
+1. Set up mount point `sudo mkdir -p /mnt/video`
+2. Add line to FStab `sudo echo "//franksdisko.local/movies  /mnt/video  cifs  guest,uid=1000,gid=1000,iocharset=utf8,_netdev,x-systemd.automount,nofail  0  0" >> /etc/fstab`
+  This version of the line is for a guest share, if you have a username/password protected share you'll have to create a credentials file and use that instead of `guest` in the fstab line.
+  For simplicity, I recommend creating a readonly guest user on your NAS for the phonieTV box to use.
+3. Reload systemd-daemon `sudo systemctl daemon-reload`
+4. Apply the mounts `sudo mount -a`
