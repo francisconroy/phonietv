@@ -1,8 +1,12 @@
 # This file contains the media player functions
+import json
 import logging
 import queue
 import threading
 import time
+from pathlib import Path
+from typing import Dict
+
 from dataclasses import dataclass
 import vlc
 
@@ -12,6 +16,32 @@ from .threading import PhonieTVTask
 
 LOGGER = logging.getLogger(__name__)
 PLAYER_TASK_SLEEP_TIME_S = 0.1
+LOCATION_SAVE_FILE = Path("file_locations.json")
+
+
+def load_location_data(location_save_file: Path | None = None) -> Dict[str, int]:
+    location_save_file = location_save_file or LOCATION_SAVE_FILE
+
+    if not location_save_file.exists():
+        location_save_file.write_text("{}", encoding="utf-8")
+
+    with location_save_file.open("r", encoding="utf-8") as location_file:
+        location_data = json.load(location_file)
+
+    if not isinstance(location_data, dict):
+        raise ValueError("file_locations.json must contain a JSON object")
+
+    return {
+        str(path): int(position)
+        for path, position in location_data.items()
+    }
+
+
+def save_location_data(location_data: Dict[str, int], location_save_file: Path | None = None) -> None:
+    location_save_file = location_save_file or LOCATION_SAVE_FILE
+
+    with location_save_file.open("w", encoding="utf-8") as location_file:
+        json.dump(location_data, location_file, indent=2, sort_keys=True)
 
 
 @dataclass(frozen=True)
@@ -27,6 +57,8 @@ class PlayerTask(PhonieTVTask):
         self.events = self.player.event_manager()
         self.events.event_attach(vlc.EventType.MediaPlayerEndReached, self._media_finished_callback)
         self.current_media: PlayMediaPayload | None = None
+        self.location_data: Dict[str, int] = {}
+        self.location_data = load_location_data()
 
     def stop_player(self):
         self.player.stop()
@@ -48,11 +80,11 @@ class PlayerTask(PhonieTVTask):
         )
 
     def _save_location(self):
-        # Save the current location of the media player
         if self.player.is_playing():
             current_time = self.player.get_time()
             LOGGER.info(f"Saving current media time: {current_time} ms")
-            # TODO : Implement saving to a file or database if needed
+            self.location_data[self.current_media.media_path] = current_time
+            save_location_data(self.location_data)
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
