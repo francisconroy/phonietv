@@ -1,0 +1,17 @@
+[Unit]
+Description=PhonieTV application service
+After=network.target
+
+[Service]
+Type=simple
+User=francis
+Group=francis
+WorkingDirectory=/home/francis/Documents/phonietv
+ExecStart=/home/francis/.local/bin/uv run phonietv
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+
