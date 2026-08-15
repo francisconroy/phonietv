@@ -29,7 +29,7 @@ def load_location_data(location_save_file: Path | None = None) -> Dict[str, int]
         location_data = json.load(location_file)
 
     if not isinstance(location_data, dict):
-        raise ValueError("file_locations.json must contain a JSON object")
+        raise ValueError(f"{location_save_file} must contain a JSON object")
 
     return {
         str(path): int(position)
