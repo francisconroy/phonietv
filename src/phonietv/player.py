@@ -108,7 +108,7 @@ class PlayerTask(PhonieTVTask):
                     start_time = self.location_data.get(self.current_media.media_path, 0)
                     self.player.set_mrl(media.get_mrl())
                     self.player.play()
-                    self.player.pause()
+                    self.player.pause()  # Pause immediately to set the time before playing
                     self.player.set_time(start_time)
                     self.player.play()
                 elif event_to_process.event_type == "stop_media":
