@@ -12,15 +12,14 @@ from phonietv.playlist import PlayMediaPayload
 
 
 class TestPlayerLocationPersistence(TestCase):
-    def test_load_location_data_creates_missing_file(self):
+    def test_save_location_data_creates_missing_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             save_file = Path(temp_dir) / "file_locations.json"
 
-            location_data = player.load_location_data(save_file)
+            player.save_location_data({"a":1}, save_file)
 
-            self.assertEqual(location_data, {})
             self.assertTrue(save_file.exists())
-            self.assertEqual(json.loads(save_file.read_text(encoding="utf-8")), {})
+            self.assertEqual(json.loads(save_file.read_text(encoding="utf-8")), {"a":1})
 
     def test_save_and_reload_location_data(self):
         with tempfile.TemporaryDirectory() as temp_dir:

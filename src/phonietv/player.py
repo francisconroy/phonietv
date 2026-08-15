@@ -23,7 +23,7 @@ def load_location_data(location_save_file: Path | None = None) -> Dict[str, int]
     location_save_file = location_save_file or LOCATION_SAVE_FILE
 
     if not location_save_file.exists():
-        location_save_file.write_text("{}", encoding="utf-8")
+        return {}
 
     with location_save_file.open("r", encoding="utf-8") as location_file:
         location_data = json.load(location_file)
