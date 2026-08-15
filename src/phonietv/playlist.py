@@ -28,7 +28,9 @@ class PlayMediaPayload:
 class PlaylistTask(PhonieTVTask):
     MEDIA_URL_MAPPING = {"Grinch": "/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4",
                          "Paw Patrol": "/mnt/video/movies/kids_movies/Paw Patrol",
-                         "Raa Raa": "/mnt/video/tv/Raa Raa"}
+                         "Raa Raa": "/mnt/video/tv/Raa Raa",
+                         "Thomas": "/mnt/video/tv/Thomas"
+                         }
     def __init__(self, task_name: str, stop_event, current_media_item_per_dir_path: Path | str = DEFAULT_CURRENT_MEDIA_ITEM_PER_DIR_PATH):
         super().__init__(task_name, stop_event)
         self.current_media_item_per_dir_path = Path(current_media_item_per_dir_path)

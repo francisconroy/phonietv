@@ -1,8 +1,12 @@
 # This file contains the media player functions
+import json
 import logging
 import queue
 import threading
 import time
+from pathlib import Path
+from typing import Dict
+
 from dataclasses import dataclass
 import vlc
 
@@ -12,6 +16,32 @@ from .threading import PhonieTVTask
 
 LOGGER = logging.getLogger(__name__)
 PLAYER_TASK_SLEEP_TIME_S = 0.1
+LOCATION_SAVE_FILE = Path("file_locations.json")
+
+
+def load_location_data(location_save_file: Path | None = None) -> Dict[str, int]:
+    location_save_file = location_save_file or LOCATION_SAVE_FILE
+
+    if not location_save_file.exists():
+        return {}
+
+    with location_save_file.open("r", encoding="utf-8") as location_file:
+        location_data = json.load(location_file)
+
+    if not isinstance(location_data, dict):
+        raise ValueError(f"{location_save_file} must contain a JSON object")
+
+    return {
+        str(path): int(position)
+        for path, position in location_data.items()
+    }
+
+
+def save_location_data(location_data: Dict[str, int], location_save_file: Path | None = None) -> None:
+    location_save_file = location_save_file or LOCATION_SAVE_FILE
+
+    with location_save_file.open("w", encoding="utf-8") as location_file:
+        json.dump(location_data, location_file, indent=2, sort_keys=True)
 
 
 @dataclass(frozen=True)
@@ -27,8 +57,14 @@ class PlayerTask(PhonieTVTask):
         self.events = self.player.event_manager()
         self.events.event_attach(vlc.EventType.MediaPlayerEndReached, self._media_finished_callback)
         self.current_media: PlayMediaPayload | None = None
+        self.location_data: Dict[str, int]= load_location_data()
 
     def stop_player(self):
+        if self.player.is_playing():
+            location = self.player.get_time()
+            LOGGER.info(f"Stopping media player at time: {location} ms")
+            self.location_data[self.current_media.media_path] = location
+            save_location_data(self.location_data)
         self.player.stop()
         self.current_media = None
         LOGGER.info("Media player stopped.")
@@ -46,13 +82,16 @@ class PlayerTask(PhonieTVTask):
                 ),
             )
         )
+        if self.location_data.pop(self.current_media.media_path,None) is not None:
+            save_location_data(self.location_data)
+        self.publish_event(PhonieTVEvent("media_finished", None))
 
     def _save_location(self):
-        # Save the current location of the media player
         if self.player.is_playing():
             current_time = self.player.get_time()
             LOGGER.info(f"Saving current media time: {current_time} ms")
-            # TODO : Implement saving to a file or database if needed
+            self.location_data[self.current_media.media_path] = current_time
+            save_location_data(self.location_data)
 
     def task_function(self, stop_event: threading.Event):
         while not stop_event.is_set():
@@ -66,10 +105,14 @@ class PlayerTask(PhonieTVTask):
                         continue
                     self.current_media = event_to_process.event_payload
                     media = self.instance.media_new(self.current_media.media_path)
+                    start_time = self.location_data.get(self.current_media.media_path, 0)
                     self.player.set_mrl(media.get_mrl())
                     self.player.play()
+                    self.player.pause()  # Pause immediately to set the time before playing
+                    self.player.set_time(start_time)
+                    LOGGER.info(f"Playing media: {self.current_media.media_path} from time: {start_time} ms")
+                    self.player.play()
                 elif event_to_process.event_type == "stop_media":
-                    self._save_location()
                     self.stop_player()
             except queue.Empty:
                 pass
@@ -77,8 +120,8 @@ class PlayerTask(PhonieTVTask):
             time.sleep(PLAYER_TASK_SLEEP_TIME_S)
 
 if __name__ == "__main__":
-    stop_event = threading.Event()
-    player_task = PlayerTask("test_player", stop_event)
+    stop_event_in = threading.Event()
+    player_task = PlayerTask("test_player", stop_event_in)
     player_task.start()
     player_task.inbound_queue.put(
         PhonieTVEvent(
