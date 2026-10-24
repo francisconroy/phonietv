@@ -42,7 +42,19 @@ The interface consists of:
 ### Operation instructions:
 1. Parent sets up PhonieTV by installing software and running it on the box
 2. Parent places media into the media directory
-3. Parent populates media_layout.toml with details about how each directory is organised and importantly which card ID
+3. Parent populates `media_layout.toml` with token-to-media mappings
+
+Example `media_layout.toml`:
+
+```toml
+[tokens]
+Grinch = "/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4"
+"Paw Patrol" = "/mnt/video/movies/kids_movies/Paw Patrol"
+"Raa Raa" = "/mnt/video/tv/Raa Raa"
+Thomas = "/mnt/video/tv/Thomas"
+```
+
+The playlist configuration is reloaded whenever a new NFC token is detected, so you can update `media_layout.toml` without restarting the app.
 
 
 # Future ideas

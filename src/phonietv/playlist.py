@@ -3,8 +3,10 @@ import os
 import queue
 import threading
 import time
+import json
 from dataclasses import dataclass
 from pathlib import Path
+import tomllib
 from typing import Callable
 
 from .current_media_item_per_dir import (
@@ -17,6 +19,48 @@ from .event import PhonieTVEvent
 from .threading import PhonieTVTask
 
 LOGGER = logging.getLogger(__name__)
+DEFAULT_MEDIA_LAYOUT_PATH = Path("media_layout.toml")
+DEFAULT_MEDIA_URL_MAPPING = {
+    "Grinch": "/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4",
+    "Paw Patrol": "/mnt/video/movies/kids_movies/Paw Patrol",
+    "Raa Raa": "/mnt/video/tv/Raa Raa",
+    "Thomas": "/mnt/video/tv/Thomas",
+}
+
+
+def save_media_url_mapping(
+    media_url_mapping: dict[str, str],
+    path: Path | str = DEFAULT_MEDIA_LAYOUT_PATH,
+) -> None:
+    file_path = Path(path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    serialized_lines = ["[tokens]"]
+    for token_name, media_path in sorted(media_url_mapping.items()):
+        serialized_lines.append(f"{json.dumps(token_name)} = {json.dumps(media_path)}")
+    file_path.write_text("\n".join(serialized_lines) + "\n", encoding="utf-8")
+
+
+def load_media_url_mapping(
+    path: Path | str = DEFAULT_MEDIA_LAYOUT_PATH,
+) -> dict[str, str]:
+    file_path = Path(path)
+    if not file_path.exists():
+        save_media_url_mapping(DEFAULT_MEDIA_URL_MAPPING, file_path)
+
+    with file_path.open("rb") as handle:
+        data = tomllib.load(handle)
+
+    tokens = data.get("tokens", data)
+    if not isinstance(tokens, dict):
+        raise ValueError("media layout file must contain a [tokens] table or a top-level mapping")
+
+    media_url_mapping: dict[str, str] = {}
+    for token_name, media_path in tokens.items():
+        if not isinstance(token_name, str) or not isinstance(media_path, str):
+            raise ValueError("media layout file token mappings must be strings")
+        media_url_mapping[token_name] = media_path
+
+    return media_url_mapping
 
 
 @dataclass(frozen=True)
@@ -26,15 +70,25 @@ class PlayMediaPayload:
 
 
 class PlaylistTask(PhonieTVTask):
-    MEDIA_URL_MAPPING = {"Grinch": "/mnt/video/movies/kids_movies/Dr Seuss The Grinch.mp4",
-                         "Paw Patrol": "/mnt/video/movies/kids_movies/Paw Patrol",
-                         "Raa Raa": "/mnt/video/tv/Raa Raa",
-                         "Thomas": "/mnt/video/tv/Thomas"
-                         }
-    def __init__(self, task_name: str, stop_event, current_media_item_per_dir_path: Path | str = DEFAULT_CURRENT_MEDIA_ITEM_PER_DIR_PATH):
+    def __init__(
+        self,
+        task_name: str,
+        stop_event,
+        current_media_item_per_dir_path: Path | str = DEFAULT_CURRENT_MEDIA_ITEM_PER_DIR_PATH,
+        media_layout_path: Path | str = DEFAULT_MEDIA_LAYOUT_PATH,
+    ):
         super().__init__(task_name, stop_event)
         self.current_media_item_per_dir_path = Path(current_media_item_per_dir_path)
+        self.media_layout_path = Path(media_layout_path)
         self.current_media_item_per_dir = load_current_media_item_per_dir(self.current_media_item_per_dir_path)
+        self.media_url_mapping = load_media_url_mapping(self.media_layout_path)
+
+    def _reload_media_url_mapping(self) -> dict[str, str]:
+        try:
+            self.media_url_mapping = load_media_url_mapping(self.media_layout_path)
+        except (OSError, tomllib.TOMLDecodeError, ValueError) as exc:
+            LOGGER.error("Unable to load media layout from %s: %s", self.media_layout_path, exc)
+        return self.media_url_mapping
 
     def _persist_current_media_item_per_dir(self) -> None:
         save_current_media_item_per_dir(self.current_media_item_per_dir, self.current_media_item_per_dir_path)
@@ -75,7 +129,7 @@ class PlaylistTask(PhonieTVTask):
             return
 
         token_name = event.event_payload
-        media_url = self.MEDIA_URL_MAPPING.get(token_name)
+        media_url = self._reload_media_url_mapping().get(token_name)
         if media_url is None:
             LOGGER.error("No media URL found for token: %s", token_name)
             return
@@ -100,7 +154,7 @@ class PlaylistTask(PhonieTVTask):
             LOGGER.error("Invalid media_finished payload: %r", event.event_payload)
             return
 
-        media_url = self.MEDIA_URL_MAPPING.get(token_name)
+        media_url = self._reload_media_url_mapping().get(token_name)
         if media_url is None or not os.path.isdir(media_url):
             return
 
