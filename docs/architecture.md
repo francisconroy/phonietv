@@ -21,5 +21,6 @@ stateDiagram
   Lockout --> Idle:Lockout timer reset
   Active --> Lockout:Lockout timer expired
   Active --> Idle:Token removed
-
+  Active --> Paused:Manually paused
+  Paused --> Active:Manually resumed
 ```
